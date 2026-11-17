@@ -77,7 +77,8 @@ jobs:
       - name: Verify bundle and launch
         run: |
           codesign --verify --deep --strict build/MacCat.app
-          lipo build/MacCat.app/Contents/MacOS/MacCat -verify_arch arm64 x86_64
+          ARCHS=" $(lipo -archs build/MacCat.app/Contents/MacOS/MacCat) "
+          [[ "$ARCHS" == *' arm64 '* && "$ARCHS" == *' x86_64 '* ]]
           build/MacCat.app/Contents/MacOS/MacCat &
           APP_PID=$!
           sleep 5

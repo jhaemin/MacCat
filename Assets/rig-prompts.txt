@@ -1,0 +1,31 @@
+Generated with built-in image_gen. Separated torso and leg art for skeletal animation.
+
+=== peach ===
+Use case: precise-object-edit. Create a 2D cutout-animation rig asset sheet based on the attached illustrated peach cat. Preserve its adorable hand-inked watercolor illustration style, face proportions, cream and apricot tabby markings. Transparent alpha, no ground shadow, no text, no grid lines.
+EXACT 2 by 2 equal square cells, each isolated with generous transparent margins. This is an animation puppet's separated parts, NOT animation poses.
+TOP LEFT: The entire cat's HEAD, EARS, NECK, HORIZONTAL TORSO and TAIL as one single connected silhouette, facing right, in the same walking side profile as reference. REMOVE ALL FOUR LEGS completely. The torso has a clean softly rounded horizontal belly edge, no leg stubs, no paws, no protrusions under belly. It must look like the upper half of the original walking cat. Keep tail extending left. This body is wider than tall.
+TOP RIGHT: ONE isolated front leg, disconnected from any body. Straight vertical relaxed dangling leg from a rounded shoulder cap at top, to forearm, ending in a cute rounded cream paw facing right at bottom. No claws or paw pads visible. Long upper arm and forearm approximately equal lengths. Painted apricot tabby markings mainly on upper half, cream lower half. No head or body. Leg is 3.5 times taller than wide.
+BOTTOM LEFT: ONE isolated back leg, disconnected from any body, straight vertical neutral pose. Rounded broad furry thigh cap at top, narrower hock and ankle below, ending in rounded cream paw pointing right at bottom. No exposed paw pads. No body. Leg is 3 times taller than wide.
+BOTTOM RIGHT: Completely EMPTY transparent cell.
+All parts opaque within their hand-inked silhouette, zero alpha outside. NO colored haze. Do not draw complete standing cats. These will be connected in code at hip/shoulder and bent at elbow/knee.
+
+=== tuxedo ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Black and white tuxedo; black back crown ears tail and upper legs, white muzzle blaze chest belly and lower legs/paws; amber eyes.
+
+=== cheese ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Golden orange ginger tabby with deeper orange stripes; creamy white chest muzzle belly lower legs paws, amber eyes.
+
+=== milk ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Ivory white cat, no stripes or patches, pink ears and nose, amber eyes. Preserve thin ink contour.
+
+=== calico ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: White calico with orange and black patches on head and back, white muzzle chest belly paws, black tail, amber eyes.
+
+=== siamese ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Cream Siamese cat with cocoa brown face ears tail and all legs/paws, blue eyes.
+
+=== cloud ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Blue-gray tabby with darker gray stripes, white chest muzzle belly and paws, green eyes.
+
+=== cocoa ===
+Edit ONLY the fur colors and markings of the attached cat animation puppet parts. Preserve EXACTLY the 2x2 layout, silhouettes, sizes, watercolor texture, hand-inked style, transparency, and all geometry. Top left is head/torso/tail WITHOUT ANY LEGS. Top right is ONE detached straight front leg. Bottom left is ONE detached straight hind leg. Bottom right EMPTY transparent. Do not attach legs to body. No extra objects/text/shadow/haze. New coat: Warm chocolate-brown tabby with deeper brown stripes, cream chest muzzle belly and paws, amber eyes.

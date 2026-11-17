@@ -1,0 +1,11 @@
+.build/
+build/
+.DS_Store
+.swiftpm/
+Baselines/
+*.p12
+*.p8
+*.password
+*.zip
+.env
+.env.*

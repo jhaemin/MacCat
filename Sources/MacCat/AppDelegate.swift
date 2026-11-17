@@ -7,6 +7,7 @@ import QuartzCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let state = AppState()
+    private let updater = UpdaterController()
     private var panel: CatPanel!
     private var statusItem: NSStatusItem!
     private var gallery: NSWindow?
@@ -252,6 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(menuItem("마우스 클릭 통과", #selector(toggleClickThrough), checked: state.clickThrough))
         menu.addItem(.separator())
         menu.addItem(menuItem("로그인 시 자동 실행", #selector(toggleLogin), checked: SMAppService.mainApp.status == .enabled))
+        menu.addItem(updater.makeMenuItem())
         menu.addItem(menuItem("MacCat 종료", #selector(quit), key: "q"))
     }
 

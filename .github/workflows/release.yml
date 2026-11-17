@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mac-cat-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      HAVE_CERT: ${{ secrets.DEVELOPER_ID_P12 != '' && secrets.DEVELOPER_ID_P12_PASSWORD != '' }}
+      HAVE_NOTARY: ${{ secrets.NOTARY_KEY_P8 != '' && secrets.NOTARY_KEY_ID != '' && secrets.NOTARY_ISSUER_ID != '' }}
+      HAVE_SPARKLE: ${{ secrets.SPARKLE_ED_PRIVATE_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate release and prepare notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == 'tag' ]]; then
+            [[ "$HAVE_CERT" == true && "$HAVE_NOTARY" == true && "$HAVE_SPARKLE" == true ]] || {
+              echo '::error::A release requires Developer ID, notarization, and Sparkle secrets.'
+              exit 1
+            }
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=$(awk '/^## /{print $2; exit}' CHANGELOG.md)
+          fi
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          ./Scripts/changelog-extract.sh "$VERSION" > "$RUNNER_TEMP/notes.md"
+          ./Scripts/changelog-extract.sh "$VERSION" CHANGELOG.ko.md > "$RUNNER_TEMP/notes.ko.md"
+          gh api markdown -f mode=gfm -f text="$(cat "$RUNNER_TEMP/notes.md")" > "$RUNNER_TEMP/notes.html"
+          gh api markdown -f mode=gfm -f text="$(cat "$RUNNER_TEMP/notes.ko.md")" > "$RUNNER_TEMP/notes.ko.html"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" Scripts/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $GITHUB_RUN_NUMBER" Scripts/Info.plist
+
+      - name: Test
+        run: swift test
+
+      - name: Import personal Developer ID certificate
+        if: env.HAVE_CERT == 'true'
+        env:
+          DEVELOPER_ID_P12: ${{ secrets.DEVELOPER_ID_P12 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          printf '%s' "$DEVELOPER_ID_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN" | awk '/Developer ID Application:.*\(TA74GWSAB2\)/{print $2; exit}')
+          [[ -n "$IDENTITY" ]] || { echo '::error::Personal Developer ID identity not found'; exit 1; }
+          echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          rm "$RUNNER_TEMP/cert.p12"
+
+      - name: Build universal app
+        env:
+          UNIVERSAL: '1'
+        run: ./Scripts/bundle.sh
+
+      - name: Verify bundle and launch
+        run: |
+          codesign --verify --deep --strict build/MacCat.app
+          lipo -verify_arch arm64 x86_64 build/MacCat.app/Contents/MacOS/MacCat
+          build/MacCat.app/Contents/MacOS/MacCat &
+          APP_PID=$!
+          sleep 5
+          kill -0 "$APP_PID" || { echo '::error::MacCat exited during launch'; exit 1; }
+          kill "$APP_PID"
+          ditto -c -k --sequesterRsrc --keepParent build/MacCat.app MacCat.zip
+
+      - name: Notarize and staple
+        if: env.HAVE_CERT == 'true' && env.HAVE_NOTARY == 'true'
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          printf '%s' "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+          xcrun notarytool submit MacCat.zip --key "$RUNNER_TEMP/notary.p8" \
+            --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait --timeout 20m
+          xcrun stapler staple build/MacCat.app
+          xcrun stapler validate build/MacCat.app
+          spctl -a -t exec -vv build/MacCat.app
+          ditto -c -k --sequesterRsrc --keepParent build/MacCat.app MacCat.zip
+
+      - name: Prepare signed update
+        if: env.HAVE_SPARKLE == 'true'
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          SIGN_UPDATE=$(find .build/artifacts -type f -path '*/bin/sign_update' -print -quit)
+          [[ -n "$SIGN_UPDATE" ]]
+          printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - MacCat.zip > "$RUNNER_TEMP/signature.txt"
+          swift Scripts/verify-update.swift MacCat.zip "$RUNNER_TEMP/signature.txt" build/MacCat.app/Contents/Info.plist
+          python3 Scripts/appcast-add.py "$VERSION" "$GITHUB_RUN_NUMBER" "$(cat "$RUNNER_TEMP/signature.txt")" \
+            "$RUNNER_TEMP/notes.html" "$RUNNER_TEMP/notes.ko.html"
+          xmllint --noout appcast.xml
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP/notes.ko.md" > "$RUNNER_TEMP/release.md"
+          gh release create "$GITHUB_REF_NAME" MacCat.zip \
+            --verify-tag --title "MacCat v$VERSION" --notes-file "$RUNNER_TEMP/release.md"
+
+      - name: Publish update feed
+        if: github.ref_type == 'tag'
+        run: |
+          git restore Scripts/Info.plist appcast.xml
+          git fetch origin main
+          git checkout -B main origin/main
+          python3 Scripts/appcast-add.py "$VERSION" "$GITHUB_RUN_NUMBER" "$(cat "$RUNNER_TEMP/signature.txt")" \
+            "$RUNNER_TEMP/notes.html" "$RUNNER_TEMP/notes.ko.html"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add appcast.xml
+          git commit -m "Publish v$VERSION to appcast"
+          git push origin main
+
+      - name: Upload dry-run artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacCat
+          path: MacCat.zip
+          retention-days: 7
+
+      - name: Remove signing credentials
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/notary.p8"
